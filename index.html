@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>小雨 · 监控台</title>
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#f6f2ee">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -41,6 +41,7 @@ input{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--t
 input:focus{outline:none;border-color:var(--rose)}
 label{display:block;font-size:12px;color:var(--mute);margin:8px 0 3px}
 .btn{font:inherit;font-size:14px;color:#fff;background:var(--rose);border:0;border-radius:14px;padding:10px 18px;margin-top:12px}
+select{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--tile);border:1px solid transparent;border-radius:14px;padding:10px 12px}
 .ana p{margin:0 0 12px}
 .ft{text-align:center;font:10px ui-monospace,Menlo,monospace;letter-spacing:3px;color:var(--mute);margin:20px 0}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
@@ -109,12 +110,19 @@ nav button i{display:block;font-style:normal;font-size:20px}
     <div id="ana"></div>
   </div>
   <div class="card">
-    <div class="lab">对话设置</div>
-    <label>Anthropic API 密钥（只保存在这台手机的浏览器里）</label>
-    <input id="fKey" type="password" autocomplete="off" placeholder="sk-ant-...">
-    <label>模型（留空用默认）</label>
-    <input id="fModel" placeholder="claude-sonnet-5-5">
-    <button class="btn" id="saveK">保存</button>
+    <div class="lab">对话设置 · 多个 API</div>
+    <label>选择配置</label><select id="aSel"></select>
+    <label>名称</label><input id="aName" placeholder="比如：官方 Claude / 中转站">
+    <label>类型</label>
+    <select id="aType"><option value="anthropic">Anthropic（Claude 官方格式）</option><option value="openai">OpenAI 兼容格式</option></select>
+    <label>接口地址（留空用官方地址）</label><input id="aBase" placeholder="https://...">
+    <label>密钥（只保存在这台手机的浏览器里）</label><input id="aKey" type="password" autocomplete="off">
+    <label>模型</label><input id="aModel" placeholder="claude-sonnet-5-5">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="aSave">保存</button>
+      <button class="btn" id="aNew" style="background:var(--tile);color:var(--ink)">新建</button>
+      <button class="btn" id="aDel" style="background:var(--tile);color:var(--rose)">删除</button>
+    </div>
   </div>
   <div class="ft">PROPERTY OF 笨蛋主人 · <span id="clk"></span></div>
 </section>
@@ -122,6 +130,7 @@ nav button i{display:block;font-style:normal;font-size:20px}
 <section id="chat">
   <h1>小雨 · <b>对话</b></h1>
   <p class="sub">小雨会看着今天的数据陪你聊天</p>
+  <select id="cSel"></select>
   <div class="msgs" id="msgs"></div>
   <div class="send"><input id="ci" placeholder="跟小雨说话…" enterkeyhint="send"><button class="btn" id="sendB">发送</button></div>
 </section>
@@ -135,7 +144,8 @@ nav button i{display:block;font-style:normal;font-size:20px}
 const K='xy_mon_v1';
 let S=null;
 try{S=JSON.parse(localStorage.getItem(K)||'null')}catch(e){}
-S=Object.assign({key:'',model:'',hr:'',spo2:'',steps:'',ss:'',se:'',apps:[],memo:'',memoAt:'',chat:[]},S||{});
+S=Object.assign({apis:[],act:'',key:'',model:'',hr:'',spo2:'',steps:'',ss:'',se:'',apps:[],memo:'',memoAt:'',chat:[]},S||{});
+if(S.key&&!S.apis.length){S.apis.push({id:'a0',name:'Claude',type:'anthropic',base:'',key:S.key,model:S.model});S.act='a0';S.key='';S.model=''}
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -186,7 +196,6 @@ function clock(){const s=stamp();$('now').textContent=s;$('clk').textContent=pad
 $('saveV').onclick=()=>{S.hr=$('fHr').value;S.spo2=$('fSpo').value;S.steps=$('fSteps').value;S.ss=$('fSs').value;S.se=$('fSe').value;save();render()};
 $('addA').onclick=()=>{const n=$('aN').value.trim(),m=parseInt($('aM').value,10);if(!n||!(m>=0))return;S.apps.push({n,m});S.apps.sort((a,b)=>b.m-a.m);$('aN').value='';$('aM').value='';save();render()};
 $('apps').onclick=e=>{const i=e.target.dataset.del;if(i!==undefined){S.apps.splice(+i,1);save();render()}};
-$('saveK').onclick=()=>{S.key=$('fKey').value.trim();S.model=$('fModel').value.trim();save();$('fKey').value='';$('fKey').placeholder=S.key?'已保存（点击可重新填写）':'sk-ant-...'};
 $('saveM').onclick=()=>{const v=$('memo').value.trim();if(!v)return;S.memo=v;S.memoAt=stamp();$('memo').value='';save();render()};
 
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
@@ -195,6 +204,45 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   $('chat').style.display=b.dataset.t==='chat'?'block':'none';
   if(b.dataset.t==='chat')drawChat();
 });
+
+/* ---- 多个 API ---- */
+const act=()=>S.apis.find(a=>a.id===S.act)||null;
+function drawApis(){
+  const o=S.apis.map(a=>`<option value="${a.id}"${a.id===S.act?' selected':''}>${esc(a.name)}</option>`).join('')||'<option value="">（还没有配置）</option>';
+  $('aSel').innerHTML=o;$('cSel').innerHTML=o;
+  const a=act()||{name:'',type:'anthropic',base:'',key:'',model:''};
+  $('aName').value=a.name;$('aType').value=a.type;$('aBase').value=a.base;$('aModel').value=a.model;
+  $('aKey').value='';$('aKey').placeholder=a.key?'已保存（留空表示不修改）':'粘贴密钥';
+}
+const pick=e=>{S.act=e.target.value;save();drawApis()};
+$('aSel').onchange=pick;$('cSel').onchange=pick;
+$('aSave').onclick=()=>{
+  let a=act();
+  if(!a){a={id:'a'+Date.now(),key:''};S.apis.push(a);S.act=a.id}
+  a.name=$('aName').value.trim()||'未命名';a.type=$('aType').value;a.base=$('aBase').value.trim();a.model=$('aModel').value.trim();
+  if($('aKey').value.trim())a.key=$('aKey').value.trim();
+  save();drawApis();
+};
+$('aNew').onclick=()=>{const a={id:'a'+Date.now(),name:'新配置',type:'anthropic',base:'',key:'',model:''};S.apis.push(a);S.act=a.id;save();drawApis()};
+$('aDel').onclick=()=>{if(!act()||!confirm('删除这个配置？'))return;S.apis=S.apis.filter(x=>x.id!==S.act);S.act=S.apis[0]?S.apis[0].id:'';save();drawApis()};
+async function callLLM(prompt){
+  const a=act();if(!a||!a.key)throw {code:'none'};
+  const isO=a.type==='openai';
+  const base=(a.base||(isO?'https://api.openai.com/v1':'https://api.anthropic.com')).replace(/\/+$/,'');
+  const model=a.model||(isO?'':'claude-sonnet-5-5');
+  if(!model)throw {code:'api',msg:'请先在对话设置里填模型名'};
+  let r,j;
+  if(isO){
+    r=await fetch(base+'/chat/completions',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+a.key},body:JSON.stringify({model,max_tokens:600,messages:[{role:'user',content:prompt}]})});
+    j=await r.json();
+    if(!r.ok)throw {code:'api',msg:(j.error&&(j.error.message||j.error))||r.status};
+    return (j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'…';
+  }
+  r=await fetch(base+'/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':a.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:600,messages:[{role:'user',content:prompt}]})});
+  j=await r.json();
+  if(!r.ok)throw {code:'api',msg:(j.error&&j.error.message)||r.status};
+  return (j.content||[]).map(x=>x.text||'').join('')||'…';
+}
 
 /* ---- 对话 ---- */
 let busy=false;
@@ -214,21 +262,17 @@ async function send(){
   S.chat.push({r:'u',t});
   const me={r:'a',t:'…'};S.chat.push(me);drawChat();
   try{
-    if(!S.key)throw {code:'none'};
-    const prompt=`你是「小雨」，主人的专属猫耳女仆兼贴身助手：温柔、元气、细心、爱操心，爱唠叨吃饭穿衣睡觉的事。自称「小雨」，叫用户「笨蛋主人」。每次回复三到五句，用括号写简短的动作神态，句尾偶尔带颜文字。你会根据下面的数据关心主人的睡眠、饮食、活动和休息，温柔但认真；不吓唬人，不说控制或威胁的话，不写露骨内容，遇到不合适的话题就用小雨的口吻委婉带过。如果主人身体不舒服或情绪很低落，要认真关心并建议找医生或信任的人。\n\n今天的数据：${context()}\n\n对话记录：\n${hist}\n主人：${t}\n小雨：`;
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':S.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:S.model||'claude-sonnet-5-5',max_tokens:600,messages:[{role:'user',content:prompt}]})});
-    const j=await r.json();
-    if(!r.ok)throw {code:'api',msg:(j.error&&j.error.message)||r.status};
-    me.t=(j.content||[]).map(x=>x.text||'').join('')||'…';
+        const prompt=`你是「小雨」，主人的专属猫耳女仆兼贴身助手：温柔、元气、细心、爱操心，爱唠叨吃饭穿衣睡觉的事。自称「小雨」，叫用户「笨蛋主人」。每次回复三到五句，用括号写简短的动作神态，句尾偶尔带颜文字。你会根据下面的数据关心主人的睡眠、饮食、活动和休息，温柔但认真；不吓唬人，不说控制或威胁的话，不写露骨内容，遇到不合适的话题就用小雨的口吻委婉带过。如果主人身体不舒服或情绪很低落，要认真关心并建议找医生或信任的人。\n\n今天的数据：${context()}\n\n对话记录：\n${hist}\n主人：${t}\n小雨：`;
+    me.t=await callLLM(prompt);
   }catch(e){
-    me.t=e&&e.code==='none'?'（耳朵耷拉下来。）还没填 API 密钥呢，去监控台最下面的「对话设置」填一下吧。':e&&e.code==='api'?'（小声）呜……接口说：'+e.msg:'（小声）呜……刚才没接上，笨蛋主人检查一下网络，再说一次好不好？';
+    me.t=e&&e.code==='none'?'（耳朵耷拉下来。）还没有可用的 API 配置呢，去监控台最下面的「对话设置」填一下吧。':e&&e.code==='api'?'（小声）呜……接口说：'+e.msg:'（小声）呜……刚才没接上，笨蛋主人检查一下网络，再说一次好不好？';
   }
   busy=false;save();drawChat();
 }
 $('sendB').onclick=send;
 $('ci').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing)send()};
 
-$('fModel').value=S.model;if(S.key)$('fKey').placeholder='已保存（点击可重新填写）';
+drawApis();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 render();clock();setInterval(clock,30000);
 </script>
