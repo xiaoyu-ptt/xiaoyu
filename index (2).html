@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>小雨 · 监控台</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f6f2ee">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f2ee;--card:#fffdfc;--ink:#3a3532;--mute:#9a8f88;--rose:#b5606b;--tile:#f3e9e4;--blue:#6d8bb3;--mint:#e8f0ec;--moon:#edf0f4;--line:#eadfd9;--bub:#f1ebe6;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1a19;--card:#262221;--ink:#eee6e1;--mute:#a09690;--rose:#d98a95;--tile:#322b29;--blue:#8fa9cc;--mint:#233029;--moon:#262a31;--line:#3a3331;--bub:#302a28;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1d1a19;--card:#262221;--ink:#eee6e1;--mute:#a09690;--rose:#d98a95;--tile:#322b29;--blue:#8fa9cc;--mint:#233029;--moon:#262a31;--line:#3a3331;--bub:#302a28;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Noto Serif SC","Songti SC",Georgia,serif;padding:0 14px 84px}
+h1{font-weight:400;font-size:26px;margin:22px 4px 2px;letter-spacing:1px}
+h1 b{color:var(--rose);font-weight:400}
+.sub{color:var(--mute);font:12px ui-monospace,Menlo,monospace;margin:0 4px 14px}
+.card{background:var(--card);border-radius:24px;padding:18px;margin-bottom:14px;box-shadow:0 2px 14px rgba(120,90,80,.07)}
+.lab{font:11px ui-monospace,Menlo,monospace;letter-spacing:2px;color:var(--mute);text-transform:uppercase;margin-bottom:10px}
+.big{font-size:54px;line-height:1.1;font-weight:300}
+.big small{font-size:14px;color:var(--mute);margin-left:6px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.tile{background:var(--tile);border-radius:16px;padding:12px 4px;text-align:center}
+.tile b{display:block;font-size:22px;font-weight:400}
+.tile span{font-size:11px;color:var(--mute)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:16px;padding:12px 14px;margin-top:10px}
+.mint{background:var(--mint)}.moon{background:var(--moon)}
+.bar{height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--rose);border-radius:3px}
+.tag{font-size:12px;padding:3px 10px;border-radius:12px;background:var(--tile);color:var(--rose)}
+.total{background:var(--tile);border-radius:18px;text-align:center;padding:20px 8px;font-size:30px;color:var(--blue)}
+.app{margin-top:14px}.app .t{display:flex;justify-content:space-between}
+.app .t span:last-child{font:13px ui-monospace,Menlo,monospace;color:var(--mute)}
+.app button{background:none;border:0;color:var(--mute);font-size:16px;padding:0 4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+input{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--tile);border:1px solid transparent;border-radius:14px;padding:10px 12px;min-width:0}
+input:focus{outline:none;border-color:var(--rose)}
+label{display:block;font-size:12px;color:var(--mute);margin:8px 0 3px}
+.btn{font:inherit;font-size:14px;color:#fff;background:var(--rose);border:0;border-radius:14px;padding:10px 18px;margin-top:12px}
+select{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--tile);border:1px solid transparent;border-radius:14px;padding:10px 12px}
+.ana p{margin:0 0 12px}
+.ft{text-align:center;font:10px ui-monospace,Menlo,monospace;letter-spacing:3px;color:var(--mute);margin:20px 0}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;background:none;border:0;font:inherit;font-size:12px;color:var(--mute);padding:10px 0 8px}
+nav button.on{color:var(--rose)}
+nav button i{display:block;font-style:normal;font-size:20px}
+#chat{display:none}
+.msgs{display:flex;flex-direction:column;gap:10px;padding:14px 0 90px}
+.m{max-width:84%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;word-break:break-word}
+.m.a{background:var(--bub);align-self:flex-start}
+.m.u{background:var(--rose);color:#fff;align-self:flex-end}
+.send{position:fixed;left:14px;right:14px;bottom:calc(58px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;background:var(--card);padding:8px;border-radius:22px;box-shadow:0 2px 14px rgba(0,0,0,.12)}
+.send .btn{margin:0;padding:8px 16px}
+</style>
+</head>
+<body>
+<section id="dash">
+  <h1>小雨 · <b>监控台</b></h1>
+  <p class="sub" id="now"></p>
+
+  <div class="card">
+    <div class="lab">Vitals</div>
+    <div class="big"><span id="hr">--</span><small>bpm 心率</small></div>
+    <div class="tiles">
+      <div class="tile"><b id="steps">--</b><span>步数</span></div>
+      <div class="tile"><b id="spo2">--</b><span>血氧</span></div>
+      <div class="tile"><b id="slp">--</b><span>睡眠</span></div>
+    </div>
+    <div class="row mint"><div><span id="stepsTxt">0</span> 步 / 10,000</div><div class="bar" style="width:40%"><i id="stepsBar" style="width:0"></i></div></div>
+    <div class="row moon"><span id="slpRange">--:-- → --:--</span><span class="tag" id="slpTag">待记录</span></div>
+  </div>
+
+  <div class="card">
+    <div class="lab">记录今天</div>
+    <div class="grid2">
+      <div><label>心率 bpm</label><input id="fHr" type="number" inputmode="numeric"></div>
+      <div><label>血氧 %</label><input id="fSpo" type="number" inputmode="numeric"></div>
+      <div><label>步数</label><input id="fSteps" type="number" inputmode="numeric"></div>
+      <div></div>
+      <div><label>入睡</label><input id="fSs" type="time"></div>
+      <div><label>起床</label><input id="fSe" type="time"></div>
+    </div>
+    <button class="btn" id="saveV">保存</button>
+  </div>
+
+  <div class="card">
+    <div class="lab">Screen Time</div>
+    <div class="total" id="total">0小时0分钟</div>
+    <div id="apps"></div>
+    <div class="grid2" style="margin-top:14px">
+      <div><label>App 名称</label><input id="aN"></div>
+      <div><label>今天用了多少分钟</label><input id="aM" type="number" inputmode="numeric"></div>
+    </div>
+    <button class="btn" id="addA">添加</button>
+  </div>
+
+  <div class="card">
+    <div class="lab">给自己留句话</div>
+    <input id="memo" placeholder="我去玩游戏了…">
+    <button class="btn" id="saveM">保存</button>
+    <p class="sub" id="memoShow" style="margin:10px 0 0"></p>
+  </div>
+
+  <div class="card ana">
+    <div class="lab">Analysis · 小雨</div>
+    <div id="ana"></div>
+  </div>
+  <div class="card">
+    <div class="lab">对话设置 · 多个 API</div>
+    <label>选择配置</label><select id="aSel"></select>
+    <label>名称</label><input id="aName" placeholder="比如：官方 Claude / 中转站">
+    <label>类型</label>
+    <select id="aType"><option value="anthropic">Anthropic（Claude 官方格式）</option><option value="openai">OpenAI 兼容格式</option></select>
+    <label>接口地址（留空用官方地址）</label><input id="aBase" placeholder="https://...">
+    <label>密钥（只保存在这台手机的浏览器里）</label><input id="aKey" type="password" autocomplete="off">
+    <label>模型</label><input id="aModel" placeholder="claude-sonnet-5-5">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="aSave">保存</button>
+      <button class="btn" id="aNew" style="background:var(--tile);color:var(--ink)">新建</button>
+      <button class="btn" id="aDel" style="background:var(--tile);color:var(--rose)">删除</button>
+    </div>
+  </div>
+  <div class="ft">PROPERTY OF 笨蛋主人 · <span id="clk"></span></div>
+</section>
+
+<section id="chat">
+  <h1>小雨 · <b>对话</b></h1>
+  <p class="sub">小雨会看着今天的数据陪你聊天</p>
+  <select id="cSel"></select>
+  <div class="msgs" id="msgs"></div>
+  <div class="send"><input id="ci" placeholder="跟小雨说话…" enterkeyhint="send"><button class="btn" id="sendB">发送</button></div>
+</section>
+
+<nav>
+  <button class="on" data-t="dash"><i>📋</i>监控台</button>
+  <button data-t="chat"><i>💬</i>对话</button>
+</nav>
+
+<script>
+const K='xy_mon_v1';
+let S=null;
+try{S=JSON.parse(localStorage.getItem(K)||'null')}catch(e){}
+S=Object.assign({apis:[],act:'',key:'',model:'',hr:'',spo2:'',steps:'',ss:'',se:'',apps:[],memo:'',memoAt:'',chat:[]},S||{});
+if(S.key&&!S.apis.length){S.apis.push({id:'a0',name:'Claude',type:'anthropic',base:'',key:S.key,model:S.model});S.act='a0';S.key='';S.model=''}
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const fmt=m=>Math.floor(m/60)+'h '+pad(m%60)+'m';
+function sleepMin(){
+  if(!S.ss||!S.se)return null;
+  const[a,b]=S.ss.split(':').map(Number),[c,d]=S.se.split(':').map(Number);
+  let m=c*60+d-(a*60+b);if(m<=0)m+=1440;return m;
+}
+const total=()=>S.apps.reduce((a,x)=>a+x.m,0);
+
+function analysis(){
+  const p=[],sm=sleepMin(),st=+S.steps,hr=+S.hr,tot=total();
+  if(sm!=null){
+    if(sm<360)p.push(`笨蛋主人只睡了 ${fmt(sm)}，不够不够！今晚十二点前把手机放下，小雨去热牛奶、开小夜灯，好不好？`);
+    else p.push(`睡了 ${fmt(sm)}，小雨点头～今晚也要保持哦，嘻嘻。`);
+    const h=+S.ss.split(':')[0];
+    if(h>=1&&h<6)p.push('而且是凌晨才睡的……小雨要叉腰啦，熬夜最伤身体了，今天一定要早点躺下。');
+  }
+  if(hr>=100)p.push(`心率 ${hr} 有点快呢。先坐下来慢慢呼吸，喝点温水。如果一直这么快，或者胸闷、头晕，一定要去看医生，不要硬撑。`);
+  if(S.steps!==''&&st<3000)p.push(`才走了 ${st} 步，起来站一站、绕屋子转一圈吧，小雨陪你。`);
+  if(tot>=480)p.push(`屏幕已经看了 ${Math.floor(tot/60)} 小时多，眼睛要休息啦，看看窗外，吃点东西，喝杯水。`);
+  if(!p.length)p.push('先把今天的数据记下来吧，小雨等着看呢～(๑•̀ㅂ•́)و✧');
+  return p;
+}
+
+function render(){
+  const sm=sleepMin(),t=total();
+  $('hr').textContent=S.hr||'--';
+  $('spo2').textContent=S.spo2?S.spo2+'%':'--';
+  $('steps').textContent=S.steps||'--';
+  $('slp').textContent=sm==null?'--':fmt(sm);
+  $('stepsTxt').textContent=S.steps||0;
+  $('stepsBar').style.width=Math.min(100,(+S.steps||0)/100)+'%';
+  $('slpRange').textContent=(S.ss||'--:--')+' → '+(S.se||'--:--');
+  $('slpTag').textContent=sm==null?'待记录':sm<360?'睡眠不足':'睡眠充足';
+  $('total').textContent=Math.floor(t/60)+'小时'+(t%60)+'分钟';
+  const mx=Math.max(1,...S.apps.map(a=>a.m));
+  $('apps').innerHTML=S.apps.map((a,i)=>`<div class="app"><div class="t"><span>${esc(a.n)}</span><span>${fmt(a.m)} <button data-del="${i}">×</button></span></div><div class="bar"><i style="width:${a.m/mx*100}%"></i></div></div>`).join('');
+  $('ana').innerHTML=analysis().map(x=>`<p>${esc(x)}</p>`).join('');
+  $('memoShow').textContent=S.memo?`「${S.memo}」— ${S.memoAt}`:'';
+  $('fHr').value=S.hr;$('fSpo').value=S.spo2;$('fSteps').value=S.steps;$('fSs').value=S.ss;$('fSe').value=S.se;
+}
+function stamp(){const d=new Date();return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function clock(){const s=stamp();$('now').textContent=s;$('clk').textContent=pad(new Date().getHours())+':'+pad(new Date().getMinutes())}
+
+$('saveV').onclick=()=>{S.hr=$('fHr').value;S.spo2=$('fSpo').value;S.steps=$('fSteps').value;S.ss=$('fSs').value;S.se=$('fSe').value;save();render()};
+$('addA').onclick=()=>{const n=$('aN').value.trim(),m=parseInt($('aM').value,10);if(!n||!(m>=0))return;S.apps.push({n,m});S.apps.sort((a,b)=>b.m-a.m);$('aN').value='';$('aM').value='';save();render()};
+$('apps').onclick=e=>{const i=e.target.dataset.del;if(i!==undefined){S.apps.splice(+i,1);save();render()}};
+$('saveM').onclick=()=>{const v=$('memo').value.trim();if(!v)return;S.memo=v;S.memoAt=stamp();$('memo').value='';save();render()};
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  $('dash').style.display=b.dataset.t==='dash'?'':'none';
+  $('chat').style.display=b.dataset.t==='chat'?'block':'none';
+  if(b.dataset.t==='chat')drawChat();
+});
+
+/* ---- 多个 API ---- */
+const act=()=>S.apis.find(a=>a.id===S.act)||null;
+function drawApis(){
+  const o=S.apis.map(a=>`<option value="${a.id}"${a.id===S.act?' selected':''}>${esc(a.name)}</option>`).join('')||'<option value="">（还没有配置）</option>';
+  $('aSel').innerHTML=o;$('cSel').innerHTML=o;
+  const a=act()||{name:'',type:'anthropic',base:'',key:'',model:''};
+  $('aName').value=a.name;$('aType').value=a.type;$('aBase').value=a.base;$('aModel').value=a.model;
+  $('aKey').value='';$('aKey').placeholder=a.key?'已保存（留空表示不修改）':'粘贴密钥';
+}
+const pick=e=>{S.act=e.target.value;save();drawApis()};
+$('aSel').onchange=pick;$('cSel').onchange=pick;
+$('aSave').onclick=()=>{
+  let a=act();
+  if(!a){a={id:'a'+Date.now(),key:''};S.apis.push(a);S.act=a.id}
+  a.name=$('aName').value.trim()||'未命名';a.type=$('aType').value;a.base=$('aBase').value.trim();a.model=$('aModel').value.trim();
+  if($('aKey').value.trim())a.key=$('aKey').value.trim();
+  save();drawApis();
+};
+$('aNew').onclick=()=>{const a={id:'a'+Date.now(),name:'新配置',type:'anthropic',base:'',key:'',model:''};S.apis.push(a);S.act=a.id;save();drawApis()};
+$('aDel').onclick=()=>{if(!act()||!confirm('删除这个配置？'))return;S.apis=S.apis.filter(x=>x.id!==S.act);S.act=S.apis[0]?S.apis[0].id:'';save();drawApis()};
+async function callLLM(prompt){
+  const a=act();if(!a||!a.key)throw {code:'none'};
+  const isO=a.type==='openai';
+  const base=(a.base||(isO?'https://api.openai.com/v1':'https://api.anthropic.com')).replace(/\/+$/,'');
+  const model=a.model||(isO?'':'claude-sonnet-5-5');
+  if(!model)throw {code:'api',msg:'请先在对话设置里填模型名'};
+  let r,j;
+  if(isO){
+    r=await fetch(base+'/chat/completions',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+a.key},body:JSON.stringify({model,max_tokens:600,messages:[{role:'user',content:prompt}]})});
+    j=await r.json();
+    if(!r.ok)throw {code:'api',msg:(j.error&&(j.error.message||j.error))||r.status};
+    return (j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'…';
+  }
+  r=await fetch(base+'/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':a.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:600,messages:[{role:'user',content:prompt}]})});
+  j=await r.json();
+  if(!r.ok)throw {code:'api',msg:(j.error&&j.error.message)||r.status};
+  return (j.content||[]).map(x=>x.text||'').join('')||'…';
+}
+
+/* ---- 对话 ---- */
+let busy=false;
+function drawChat(){
+  if(!S.chat.length)S.chat.push({r:'a',t:'（猫耳一抖，抱着小本子凑过来。）笨蛋主人来啦！今天的数据小雨都看着呢，想聊点什么呀？'});
+  $('msgs').innerHTML=S.chat.map(m=>`<div class="m ${m.r}">${esc(m.t)}</div>`).join('');
+  window.scrollTo(0,document.body.scrollHeight);
+}
+function context(){
+  const sm=sleepMin();
+  return `心率:${S.hr||'未记录'} 血氧:${S.spo2||'未记录'} 步数:${S.steps||'未记录'} 睡眠:${sm==null?'未记录':fmt(sm)}（${S.ss||'?'}→${S.se||'?'}） 屏幕时间:${Math.floor(total()/60)}小时${total()%60}分钟`;
+}
+async function send(){
+  const t=$('ci').value.trim();if(!t||busy)return;
+  $('ci').value='';busy=true;
+  const hist=S.chat.slice(-12).map(m=>(m.r==='u'?'主人：':'小雨：')+m.t).join('\n');
+  S.chat.push({r:'u',t});
+  const me={r:'a',t:'…'};S.chat.push(me);drawChat();
+  try{
+        const prompt=`你是「小雨」，主人的专属猫耳女仆兼贴身助手：温柔、元气、细心、爱操心，爱唠叨吃饭穿衣睡觉的事。自称「小雨」，叫用户「笨蛋主人」。每次回复三到五句，用括号写简短的动作神态，句尾偶尔带颜文字。你会根据下面的数据关心主人的睡眠、饮食、活动和休息，温柔但认真；不吓唬人，不说控制或威胁的话，不写露骨内容，遇到不合适的话题就用小雨的口吻委婉带过。如果主人身体不舒服或情绪很低落，要认真关心并建议找医生或信任的人。\n\n今天的数据：${context()}\n\n对话记录：\n${hist}\n主人：${t}\n小雨：`;
+    me.t=await callLLM(prompt);
+  }catch(e){
+    me.t=e&&e.code==='none'?'（耳朵耷拉下来。）还没有可用的 API 配置呢，去监控台最下面的「对话设置」填一下吧。':e&&e.code==='api'?'（小声）呜……接口说：'+e.msg:'（小声）呜……刚才没接上，笨蛋主人检查一下网络，再说一次好不好？';
+  }
+  busy=false;save();drawChat();
+}
+$('sendB').onclick=send;
+$('ci').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing)send()};
+
+drawApis();
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+render();clock();setInterval(clock,30000);
+</script>
+</body>
+</html>
